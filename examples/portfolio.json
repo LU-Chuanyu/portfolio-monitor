@@ -1,0 +1,14 @@
+{
+  "account_name": "Synthetic Demo Portfolio",
+  "positions": [
+    {"asset": "USDT", "symbol": "USDT", "instrument": "SPOT", "side": "LONG", "quantity": 32000, "entry_price_usdt": 1},
+    {"asset": "BTC", "symbol": "BTCUSDT", "instrument": "SPOT", "side": "LONG", "quantity": 0.62, "entry_price_usdt": 64000},
+    {"asset": "BTC", "symbol": "BTCUSDT", "instrument": "PERP", "side": "SHORT", "quantity": 0.62, "entry_price_usdt": 64000},
+    {"asset": "ETH", "symbol": "ETHUSDT", "instrument": "SPOT", "side": "LONG", "quantity": 13, "entry_price_usdt": 2450},
+    {"asset": "ETH", "symbol": "ETHUSDT", "instrument": "PERP", "side": "SHORT", "quantity": 13, "entry_price_usdt": 2450},
+    {"asset": "SOL", "symbol": "SOLUSDT", "instrument": "SPOT", "side": "LONG", "quantity": 180, "entry_price_usdt": 94},
+    {"asset": "SOL", "symbol": "SOLUSDT", "instrument": "PERP", "side": "SHORT", "quantity": 180, "entry_price_usdt": 94},
+    {"asset": "HYPE", "symbol": "HYPEUSDT", "instrument": "SPOT", "side": "LONG", "quantity": 340, "entry_price_usdt": 29},
+    {"asset": "HYPE", "symbol": "HYPEUSDT", "instrument": "PERP", "side": "SHORT", "quantity": 340, "entry_price_usdt": 29}
+  ]
+}

@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="Monitor a spot and perpetual portfolio using Bybit quotes, with next funding estimates, net exposure, and historical performance.">
+  <title>Overview | Portfolio Monitor</title>
+  <link rel="preload" href="/fonts/dm-sans.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/style.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="/"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>Portfolio Monitor</a>
+      <nav aria-label="Main navigation"><a href="/" data-page="overview">Overview</a><a href="/positions" data-page="positions">Positions</a><a href="/history" data-page="history">History</a></nav>
+      <div class="head-actions">
+        <p id="status" role="status">Connecting to Bybit</p>
+        <div class="quote-settings" id="update-mode">
+          <span id="quote-refresh-label">Quote refresh</span>
+          <div class="segmented" role="group" aria-labelledby="quote-refresh-label" data-selection="0">
+            <button type="button" data-update="minute" aria-pressed="true">1 min</button>
+            <button type="button" data-update="fast" aria-pressed="false">5 sec</button>
+          </div>
+        </div>
+        <button id="refresh" type="button" title="Read the latest quote snapshot from the server."><span class="refresh-indicator" aria-hidden="true"></span><span id="refresh-label">Refresh quotes</span></button>
+      </div>
+    </div>
+  </header>
+  <div class="workspace">
+    <div class="workspace-head"><div><h1 id="page-title">Overview</h1><p id="page-subtitle"></p></div><p class="venue">Bybit <span>·</span> USDT</p></div>
+    <main id="main"></main>
+  </div>
+
+  <template id="overview">
+    <div class="overview-opening">
+      <section class="headlines" aria-label="Portfolio summary">
+        <div class="headline-pair">
+          <article class="metric primary">
+            <h2>Estimated next funding</h2>
+            <p class="metric-values"><span class="headline-number" id="funding" title="Percentage of account equity">…</span><span class="metric-amount" id="funding-amount"></span></p>
+            <p class="metric-context" id="funding-direction">Waiting for quotes</p><p class="metric-context mono" id="funding-clock"></p>
+            <p class="metric-context" id="funding-driver" hidden></p>
+            <p class="metric-context" id="funding-all-next" hidden></p>
+          </article>
+          <article class="metric hedge">
+            <h2>Net delta exposure</h2>
+            <p class="metric-values"><span class="exposure-number" id="exposure">…</span><span class="metric-amount" id="exposure-amount"></span></p>
+            <p class="metric-context">% of account equity</p><p class="metric-context" id="largest-exposure"></p>
+          </article>
+        </div>
+        <dl class="support">
+          <div><dt>Total account equity</dt><dd id="equity">…</dd><dd class="metric-context" id="equity-baseline" title="Cash and the entry cost of the spot positions"></dd></div>
+          <div><dt>Unrealized P&amp;L</dt><dd id="pnl">…</dd></div>
+        </dl>
+      </section>
+      <section class="trend" aria-labelledby="trend-title">
+        <div class="section-head">
+          <div><h2 id="trend-title">Settled funding · Last 7 days</h2><p id="live-chart-note">Each point covers 8 hours (UTC)</p></div>
+          <div class="trend-actions">
+            <div class="segmented" id="trend-mode" role="group" aria-label="Overview chart" data-selection="0">
+              <button type="button" data-trend="funding" aria-pressed="true">8h Funding</button>
+              <button type="button" data-trend="equity" aria-pressed="false">1m Equity</button>
+            </div>
+            <a href="/history">View history <span aria-hidden="true">↗</span></a>
+          </div>
+        </div>
+        <p class="trend-value" id="trend-value" hidden></p>
+        <p class="trend-basis" id="trend-basis" hidden></p>
+        <div class="chart" id="live-chart"></div>
+      </section>
+    </div>
+      <section class="audit overview-audit" aria-labelledby="audit-title">
+        <div class="section-head">
+          <h2 id="audit-title">Funding and exposure by asset</h2>
+          <div class="overview-table-meta">
+            <p id="overview-settlement" hidden></p>
+            <p>+ receive / − pay</p>
+          </div>
+        </div>
+        <div id="funding-detail"></div>
+      </section>
+    <section class="source-strip" aria-labelledby="feeds-title">
+      <div class="feed-summary">
+        <h2 id="feeds-title">Bybit data</h2>
+        <span id="feed-state">Waiting for quotes</span>
+        <time id="feed-updated" hidden></time>
+        <a href="/data" data-page="data">Details <span aria-hidden="true">↗</span></a>
+      </div>
+      <div id="issues"></div>
+    </section>
+  </template>
+
+  <template id="positions">
+    <section class="allocation-grid" id="allocations" aria-label="Notional exposure allocations"></section>
+    <section class="surface ledger" aria-labelledby="positions-title">
+      <div class="section-head"><div><h2 id="positions-title">Position ledger</h2><p id="position-count">Waiting for quotes</p></div><div class="choices" id="asset-filter" aria-label="Filter by asset"></div></div>
+      <div id="asset-breakdown" hidden></div>
+      <div class="table-wrap"><table aria-label="Portfolio positions">
+      <colgroup><col style="width:8.25%"><col style="width:8.1%"><col style="width:5.6%"><col style="width:8.2%"></colgroup>
+      <colgroup><col style="width:8.05%"><col style="width:9.2%"><col style="width:8.55%"><col style="width:10.4%"></colgroup>
+      <colgroup><col style="width:8.3%"><col style="width:8.65%"><col style="width:16.7%"></colgroup>
+      <thead>
+      <tr class="ledger-column-groups"><th scope="colgroup" colspan="4">Position</th><th scope="colgroup" colspan="4">Valuation <span>USDT</span></th><th scope="colgroup" colspan="3">Perpetual funding <span>USDT payments · + receive / − pay</span></th></tr>
+      <tr>
+        <th scope="col">Symbol</th><th scope="col">Instrument</th><th scope="col">Side</th><th scope="col">Quantity</th><th scope="col">Entry price</th><th scope="col">Current price</th><th scope="col">Value</th><th scope="col">Unrealized P&amp;L</th><th scope="col">Funding rate</th><th scope="col">Est. payment</th><th scope="col">Settlement / countdown</th>
+      </tr></thead><tbody id="position-rows"></tbody></table></div>
+      <div id="position-cards" class="position-cards"></div>
+      <div class="ledger-footer"><p>Spot: last price · Perps: mark price · USDT: starting cash<span class="mobile-payment-note"> · Funding: + receive / − pay</span></p></div>
+    </section>
+  </template>
+
+  <template id="history">
+    <nav class="choices research-nav" aria-label="Historical analysis" id="research-nav">
+      <button type="button" data-research="portfolio" aria-pressed="true">Fixed portfolio</button>
+      <button type="button" data-research="funding" aria-pressed="false">Funding rates</button>
+      <button type="button" data-research="backtest" aria-pressed="false">Strategy backtest</button>
+    </nav>
+    <section class="historical" data-research-panel="portfolio" aria-labelledby="history-title">
+      <div class="section-head">
+        <div><h2 id="history-title">Fixed-position equity</h2><p id="history-window">Loading historical report</p></div>
+        <div class="choices" id="history-range" aria-label="Equity history range"><button type="button" data-days="7" aria-pressed="false">7 days</button><button type="button" data-days="30" aria-pressed="true">30 days</button><button type="button" data-days="365" aria-pressed="false">1 year</button><button type="button" data-days="all" aria-pressed="false">All available</button></div>
+      </div>
+      <div class="history-body">
+        <div class="history-equity">
+          <div class="chart" id="history-chart"><p class="chart-text">Loading daily equity…</p></div>
+          <div class="history-picker"><label for="history-day">Valuation date</label><select id="history-day" disabled></select><div class="choices" id="history-jump"><button type="button" data-jump="drawdown">Max drawdown</button><button type="button" data-jump="funding">Peak funding day</button><button type="button" data-jump="debit">Lowest funding day</button></div></div>
+          <p class="selection" id="history-selection" aria-live="polite"></p>
+        </div>
+        <section class="strategy" aria-labelledby="strategy-title">
+          <h3 id="strategy-title">Strategy metrics</h3>
+          <dl class="history-metrics" id="history-metrics"></dl>
+          <details class="method-note">
+            <summary>Metric definitions</summary>
+            <p>Annualized return compounds the selected window to 365 days. Sharpe and Sortino use daily returns and a 0% reference rate. Calmar uses the selected window’s drawdown. Simulated USDT cash combines starting cash and cumulative funding.</p>
+          </details>
+        </section>
+      </div>
+    </section>
+    <section class="historical" data-research-panel="funding" aria-labelledby="funding-history-title" hidden>
+      <div class="section-head"><div><h2 id="funding-history-title">Settled funding rates</h2><p id="funding-history-window" role="status">Loading funding rates</p></div>
+        <div class="research-controls"><label for="funding-symbol">Contract</label><select id="funding-symbol"><option>BTCUSDT</option><option>ETHUSDT</option><option>SOLUSDT</option><option>HYPEUSDT</option></select>
+          <label for="funding-days">Range</label><select id="funding-days"><option value="30">30 days</option><option value="365" selected>1 year</option><option value="all">All available</option></select>
+          <label for="funding-granularity">Points</label><select id="funding-granularity"><option value="day">Daily</option><option value="settlement">Settlements</option></select></div>
+      </div>
+      <div class="history-body"><div class="history-equity"><div class="chart research-chart" id="funding-history-chart"></div><div class="history-picker"><label for="funding-history-day">Settlement date</label><select id="funding-history-day" disabled></select></div><p class="selection" id="funding-history-selection" aria-live="polite"></p></div>
+        <section class="strategy" aria-label="Historical funding metrics"><h3>Funding summary</h3><dl class="history-metrics" id="funding-history-metrics"></dl><p class="strategy-note">Daily rates sum UTC settlements. Negative rates: shorts pay.</p></section>
+      </div>
+    </section>
+    <section class="historical" data-research-panel="backtest" aria-labelledby="backtest-title" hidden>
+      <div class="section-head"><div><h2 id="backtest-title">Strategy backtest</h2><p id="backtest-window">Loading available dates</p></div></div>
+      <form id="backtest-form" class="backtest-form">
+        <label>Start (UTC)<input name="start" type="text" list="backtest-date-options" placeholder="YYYY-MM-DD" autocomplete="off" spellcheck="false" aria-required="true"></label>
+        <label>End (UTC)<input name="end" type="text" list="backtest-date-options" placeholder="YYYY-MM-DD" autocomplete="off" spellcheck="false" aria-required="true"></label>
+        <datalist id="backtest-date-options"></datalist>
+        <label>Capital (USDT)<input name="capital" type="number" value="100000" min="1" max="1000000000" step="0.01" required></label>
+        <label>Cash reserve (%)<input name="reserve_pct" type="number" value="20" min="0" max="100" step="0.01" required></label>
+        <label>Entry fee (bps/leg)<input name="entry_bps" type="number" value="10" min="0" max="1000" step="0.01" required></label>
+        <label>Exit fee (bps/leg)<input name="exit_bps" type="number" value="10" min="0" max="1000" step="0.01" required></label>
+        <label>BTC weight (%)<input name="btc" type="number" value="25" min="0" max="100" step="0.01" required></label>
+        <label>ETH weight (%)<input name="eth" type="number" value="25" min="0" max="100" step="0.01" required></label>
+        <label>SOL weight (%)<input name="sol" type="number" value="25" min="0" max="100" step="0.01" required></label>
+        <label>HYPE weight (%)<input name="hype" type="number" value="25" min="0" max="100" step="0.01" required></label>
+        <label>Slippage (bps/leg)<select id="backtest-slippage" name="slippage_bps"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="5">5</option></select></label>
+        <button type="submit" id="run-backtest" disabled>Run backtest</button>
+      </form>
+      <p class="backtest-status" id="backtest-status" role="status"></p>
+      <div class="history-body" id="backtest-result" hidden>
+        <div class="history-equity">
+          <div class="chart research-chart" id="backtest-chart"></div>
+          <div class="backtest-valuation">
+            <div class="history-picker"><label for="backtest-day">Valuation date</label><select id="backtest-day" disabled></select></div>
+            <p class="selection" id="backtest-selection" aria-live="polite"></p>
+          </div>
+          <section class="opening-positions" aria-labelledby="opening-positions-title"><h3 id="opening-positions-title">Opening positions</h3><div id="backtest-entries"></div></section>
+        </div>
+        <section class="strategy" aria-label="Backtest performance">
+          <h3>Performance breakdown</h3>
+          <dl class="history-metrics" id="backtest-attribution"></dl>
+          <h3 class="backtest-net-title">Net results after costs</h3>
+          <dl class="history-metrics" id="backtest-metrics"></dl>
+          <details class="method-note">
+            <summary>Execution assumptions</summary>
+            <p id="backtest-fees"></p>
+            <p>Opens at prior UTC closes and closes both legs at the end. Funding covers settlements while positions are open. Entry fees reduce deployable capital. Entry slippage reduces the cash reserve.</p>
+            <p>Slippage is a cash cost on fixed quantities, applied to both legs at entry and exit. Break-even slippage is the per-leg cost that reduces net P&amp;L to zero.</p>
+          </details>
+        </section>
+      </div>
+    </section>
+  </template>
+  <template id="data">
+    <section class="diagnostic-health" aria-label="Collection status">
+      <div><h2>Live quotes</h2><p id="data-health">Checking…</p><p class="detail-text" id="data-last-event"></p><p class="detail-text" id="health-event-links" hidden></p></div>
+      <div><h2>Historical coverage</h2><p id="data-ingestion">Checking…</p><p class="detail-text" id="data-ingestion-detail"></p></div>
+    </section>
+    <section aria-labelledby="data-log-title">
+      <h2 id="data-log-title">Observation log</h2>
+      <form id="diagnostic-filter" class="diagnostic-filter">
+        <label>From (UTC)<input name="start" type="text" placeholder="YYYY-MM-DD HH:MM:SS" autocomplete="off" spellcheck="false"></label>
+        <label>To (UTC)<input name="end" type="text" placeholder="YYYY-MM-DD HH:MM:SS" autocomplete="off" spellcheck="false"></label>
+        <label>Request ID<input name="request_id" type="search" autocomplete="off"></label>
+        <button type="submit">Search</button>
+      </form>
+      <p id="diagnostic-message" class="detail-text" role="status"></p>
+      <div class="diagnostic-results">
+        <div class="diagnostic-log" id="diagnostic-log" role="group" aria-label="Matching observations"></div>
+        <section class="diagnostic-inspector" aria-labelledby="diagnostic-selection">
+          <h3 id="diagnostic-selection">Observation details</h3>
+          <table class="diagnostic-times" id="diagnostic-times" aria-label="Quote timestamps for the selected observation" hidden>
+            <thead><tr><th scope="col">Source</th><th scope="col">Exchange time</th><th scope="col">Received time</th></tr></thead>
+            <tbody id="diagnostic-time-rows"></tbody>
+          </table>
+          <pre id="diagnostic-detail" tabindex="0"></pre>
+        </section>
+      </div>
+    </section>
+  </template>
+</body>
+</html>
