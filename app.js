@@ -1037,6 +1037,7 @@ async function loadDiagnostics() {
   const params = new URLSearchParams(filters);
   params.delete('limit');
   history.replaceState(null, '', params.size ? `/data?${params}` : '/data');
+  el('diagnostic-clear').hidden = params.size === 0;
   text('diagnostic-message', 'Reading local observations…');
   try {
     const result = await api.diagnostics(filters);

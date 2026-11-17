@@ -205,7 +205,10 @@
         <label>Request ID<input name="request_id" type="search" autocomplete="off"></label>
         <button type="submit">Search</button>
       </form>
-      <p id="diagnostic-message" class="detail-text" role="status"></p>
+      <div class="diagnostic-result-summary">
+        <p id="diagnostic-message" class="detail-text" role="status"></p>
+        <a id="diagnostic-clear" href="/data" hidden>Back to all observations</a>
+      </div>
       <div class="diagnostic-results">
         <div class="diagnostic-log" id="diagnostic-log" role="group" aria-label="Matching observations"></div>
         <section class="diagnostic-inspector" aria-labelledby="diagnostic-selection">

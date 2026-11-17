@@ -338,6 +338,7 @@ td { white-space: nowrap; }
 .diagnostic-filter { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)) auto; gap: 12px; align-items: end; margin-block: 12px; }
 .diagnostic-filter label { display: grid; gap: 4px; color: var(--muted); font-size: 13px; min-width: 0; }
 .diagnostic-filter input { min-width: 0; width: 100%; padding: 7px 9px; border: 1px solid var(--line); border-radius: 5px; color: inherit; background: var(--field); font: inherit; }
+.diagnostic-result-summary { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; }
 .diagnostic-results { display: grid; grid-template-columns: minmax(235px, 1fr) minmax(0,2fr); gap: 14px; }
 .diagnostic-log, .diagnostic-inspector { min-width: 0; border: 1px solid var(--line); border-radius: 6px; }
 .diagnostic-log, .diagnostic-inspector pre { max-height: min(43vh, 330px); overflow: auto; }
