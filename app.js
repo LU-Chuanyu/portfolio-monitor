@@ -53,7 +53,7 @@ document.title = `${title} · Portfolio Monitor`;
 if (demo) {
   document.querySelector('.venue').textContent = 'Synthetic demo · USDT';
   text('status','Loading synthetic quotes');
-  if (view === 'overview') text('feeds-title','Synthetic data');
+  if (view === 'overview') text('feeds-title','Synthetic data quality');
 }
 document.querySelector(`[data-page="${view}"]`)?.setAttribute('aria-current', 'page');
 
@@ -476,7 +476,7 @@ function renderMarketData(snapshot = latestSnapshot) {
   if (lastFailure) label = 'Refresh failed';
   else if (stale) label = 'Stale quotes';
   else if (snapshot?.status === 'ready') {
-    label = demo ? 'Simulated' : snapshot.transport === 'websocket' ? 'Live' : snapshot.stream ? 'REST fallback' : 'REST';
+    label = demo ? 'Simulated' : 'Up to date';
   } else if (snapshot) label = snapshot.status === 'partial' ? 'Partial quotes' : 'Quotes unavailable';
   const state = el('feed-state');
   state.textContent = label;

@@ -15,7 +15,7 @@
   <header class="topbar">
     <div class="topbar-inner">
       <a class="brand" href="/"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>Portfolio Monitor</a>
-      <nav aria-label="Main navigation"><a href="/" data-page="overview">Overview</a><a href="/positions" data-page="positions">Positions</a><a href="/history" data-page="history">History</a></nav>
+      <nav aria-label="Main navigation"><a href="/" data-page="overview">Overview</a><a href="/positions" data-page="positions">Positions</a><a href="/history" data-page="history">History</a><a href="/data" data-page="data">Data Health</a></nav>
       <div class="head-actions">
         <p id="status" role="status">Connecting to Bybit</p>
         <div class="quote-settings" id="update-mode">
@@ -84,11 +84,12 @@
       </section>
     <section class="source-strip" aria-labelledby="feeds-title">
       <div class="feed-summary">
-        <h2 id="feeds-title">Bybit data</h2>
+        <h2 id="feeds-title">Bybit data quality</h2>
         <span id="feed-state">Waiting for quotes</span>
         <time id="feed-updated" hidden></time>
-        <a href="/data" data-page="data">Details <span aria-hidden="true">↗</span></a>
+        <a href="/data">Data Health <span aria-hidden="true">↗</span></a>
       </div>
+      <p class="feed-explanation">Shows how recent and complete the market data used on this page is.</p>
       <div id="issues"></div>
     </section>
   </template>

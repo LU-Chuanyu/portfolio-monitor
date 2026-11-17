@@ -52,7 +52,7 @@ a { color: var(--mint); text-underline-offset: 3px; }
 .brand-mark i:nth-child(2) { height: 8px; }
 .brand-mark i:nth-child(3) { height: 11px; }
 nav { align-self: stretch; display: flex; gap: 20px; }
-nav a { color: var(--muted); text-decoration: none; display: flex; align-items: center; border-bottom: 2px solid transparent; }
+nav a { color: var(--muted); text-decoration: none; display: flex; align-items: center; border-bottom: 2px solid transparent; white-space: nowrap; }
 nav a:hover, nav a[aria-current=page] { color: var(--ink); }
 nav a[aria-current=page] { border-color: var(--mint); }
 nav a { transition: color .14s ease-out, border-color .14s ease-out; }
@@ -325,6 +325,7 @@ td { white-space: nowrap; }
 .feed-summary > :not(:first-child)::before { color: var(--dim); content: "·"; display: inline-block; margin-inline-end: 9px; }
 .feed-summary a { text-decoration: none; }
 .feed-summary a:is(:hover, :focus-visible) { text-decoration: underline; }
+.feed-explanation { color: var(--muted); font-size: 12px; margin-top: 3px; }
 #feed-state[data-tone="normal"] { color: var(--mint); }
 #feed-state[data-tone="warning"], .source-strip #issues { color: var(--warn); }
 .source-strip #issues:empty { display: none; }

@@ -1,6 +1,6 @@
 # Portfolio Monitor
 
-A browser dashboard for a portfolio of matched spot longs and USDT perpetual shorts. The Overview shows account equity, unrealized P&L, estimated funding at the next settlement, and net exposure. Positions pairs the hedge legs and shows both allocation charts. History covers settled funding, daily simulated cash, and a configurable backtest. Data Health shows the quote timestamps and the observations used for valuation.
+A browser dashboard for a portfolio of matched spot longs and USDT perpetual shorts. The Overview shows account equity, unrealized P&L, estimated funding at the next settlement, and net exposure. Positions pairs the hedge legs and shows both allocation charts. History covers settled funding, daily simulated cash, and a configurable backtest. Open Data Health from the main navigation or the data quality summary on Overview to inspect quote timestamps and the observations used for valuation.
 
 ## Run locally
 
