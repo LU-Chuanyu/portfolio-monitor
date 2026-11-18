@@ -11,6 +11,7 @@ export function drawChart(container, rows, {
   highlightLatest = false,
   inspect = false,
   zeroBaseline = false,
+  zeroLabel,
   showEndPoint = false,
   axisUnit,
   axisValue,
@@ -28,7 +29,8 @@ export function drawChart(container, rows, {
   }
   const width = 720, height = 146, pad = 10;
   const values = data.map(row => row.value);
-  if (zeroBaseline) values.push(0);
+  const showZero = zeroBaseline || Boolean(zeroLabel);
+  if (showZero) values.push(0);
   const min = Math.min(...values);
   const max = Math.max(...values);
   const margin = Math.max(minPadding, (max - min) * .15);
@@ -44,7 +46,7 @@ export function drawChart(container, rows, {
   definitions.append(area);
   chart.append(definitions);
   for (const n of [pad, height / 2, height - pad]) chart.append(svgNode('line', {x1:pad, x2:width-pad, y1:n, y2:n}));
-  if (zeroBaseline) chart.append(svgNode('line', {class:'zero-line', x1:pad, x2:width-pad, y1:y(0), y2:y(0)}));
+  if (showZero) chart.append(svgNode('line', {class:'zero-line', x1:pad, x2:width-pad, y1:y(0), y2:y(0)}));
   let points = [];
   const flush = () => {
     if (points.length > 1) {
@@ -162,6 +164,13 @@ export function drawChart(container, rows, {
   const frame = document.createElement('div');
   frame.className = 'chart-frame';
   frame.append(axes, chart);
+  if (zeroLabel) {
+    const reference = document.createElement('span');
+    reference.className = 'chart-zero-label';
+    reference.textContent = zeroLabel;
+    reference.style.insetBlockStart = `${y(0) / height * 100}%`;
+    frame.append(reference);
+  }
   if (tooltip) frame.append(tooltip);
   container.replaceChildren(frame,scale);
   return moveCursor;

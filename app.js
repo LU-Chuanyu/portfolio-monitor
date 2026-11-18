@@ -83,11 +83,11 @@ function metrics(rows) {
   return rows.map(([label, value, reason]) => `<div><dt>${escape(label)}</dt><dd${reason ? ' data-unavailable="true"' : ''}>${escape(value)}${reason ? ` <small>${escape(reason)}</small>` : ''}</dd></div>`).join('');
 }
 function plot(id, rows, label, {
-  onSelect, highlightLatest, inspect, zeroBaseline, asRate = false,
+  onSelect, highlightLatest, inspect, zeroBaseline, zeroLabel, asRate = false,
   rateAxisDigits = 3, axisUnit = asRate ? 'Rate' : 'USDT',
 } = {}) {
   return drawChart(el(id), rows, {
-    label, onSelect, highlightLatest, inspect, zeroBaseline, axisUnit,
+    label, onSelect, highlightLatest, inspect, zeroBaseline, zeroLabel, axisUnit,
     showEndPoint: id === 'live-chart',
     axisValue: asRate ? (value) => pct(value, rateAxisDigits) : (value) => format(value),
     chartValue: asRate ? (value) => pct(value, 5, true) : money,
@@ -679,7 +679,7 @@ async function loadFundingArchive() {
       markup('funding-history-selection', `<strong>${escape(point.label)} UTC</strong><span>${bySettlement ? 'Settled rate' : 'Daily rate'} <b>${pct(point.value,5,true)}</b></span>${count}`);
       moveCursor(index);
     };
-    const moveCursor = plot('funding-history-chart',points,`${symbol} ${bySettlement ? 'settled funding rates' : 'daily sum of settled funding rates'}`, {onSelect:select, asRate:true});
+    const moveCursor = plot('funding-history-chart',points,`${symbol} ${bySettlement ? 'settled funding rates' : 'daily sum of settled funding rates'}`, {onSelect:select, asRate:true, zeroLabel:'0%'});
     picker.replaceChildren(...points.map((point,index)=>new Option(point.label,String(index))));
     picker.onchange = () => select(Number(picker.value));
     picker.disabled = false;

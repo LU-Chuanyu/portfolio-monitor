@@ -185,6 +185,7 @@ td { white-space: nowrap; }
 @keyframes chart-update { from { opacity: .2; } to { opacity: 1; } }
 .chart .cursor-line { stroke: currentColor; stroke-width: 1; }
 .chart .zero-line { stroke: var(--dim); stroke-dasharray: 4 4; }
+.chart-zero-label { position: absolute; grid-area: 1 / 2 / 2 / 3; inset-inline-end: 3%; transform: translateY(calc(-100% - 2px)); padding: 1px 4px; background: var(--field); color: var(--ink); font: 11px/1 var(--mono); pointer-events: none; }
 .trend .chart svg { cursor: crosshair; }
 @media (prefers-reduced-motion: no-preference) {
   .chart :is(.cursor-line,.cursor-point) { transition: transform .16s ease-out; }
