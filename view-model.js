@@ -1,6 +1,21 @@
 export const MINUTE_MS = 60_000;
 export const FUNDING_WINDOW_MS = 8 * 60 * MINUTE_MS;
 
+export function observationTime(value, end = false) {
+  const match = /^(\d{4}-\d{2}-\d{2})(?:[T ](\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?)(Z|[+-]\d{2}:\d{2})?)?$/.exec(value ?? '');
+  if (!match || !isDay(match[1])) return null;
+  const [, day, time = end ? '23:59:59' : '00:00:00', zone = 'Z'] = match;
+  if (time.startsWith('24:')) return null;
+  const stamp = new Date(`${day}T${time}${zone}`);
+  if (!Number.isFinite(stamp.valueOf())) return null;
+  const utc = stamp.toISOString();
+  return [utc.slice(0, 10), ...utc.slice(11, 19).split(':')];
+}
+
+export function observationBound([day, hour, minute, second], end = false) {
+  return day ? `${day}T${hour}:${minute}:${second}${end ? '.999' : ''}Z` : '';
+}
+
 export const isRecord = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
 export const isTimestamp = (value) => typeof value === 'string'
   && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|\+00:00)$/.test(value)

@@ -153,9 +153,22 @@
     <section class="historical" data-research-panel="backtest" aria-labelledby="backtest-title" hidden>
       <div class="section-head"><div><h2 id="backtest-title">Strategy backtest</h2><p id="backtest-window">Loading available dates</p></div></div>
       <form id="backtest-form" class="backtest-form">
-        <label>Start (UTC)<input name="start" type="text" list="backtest-date-options" placeholder="YYYY-MM-DD" autocomplete="off" spellcheck="false" aria-required="true"></label>
-        <label>End (UTC)<input name="end" type="text" list="backtest-date-options" placeholder="YYYY-MM-DD" autocomplete="off" spellcheck="false" aria-required="true"></label>
-        <datalist id="backtest-date-options"></datalist>
+        <fieldset class="backtest-date" id="backtest-start" aria-describedby="backtest-window backtest-status">
+          <legend>Start (UTC)</legend>
+          <div class="utc-date-picker">
+            <input type="text" inputmode="numeric" maxlength="4" placeholder="YYYY" autocomplete="off" aria-label="Start year (UTC)">
+            <select aria-label="Start month (UTC)"></select>
+            <select aria-label="Start day (UTC)"></select>
+          </div>
+        </fieldset>
+        <fieldset class="backtest-date" id="backtest-end" aria-describedby="backtest-window backtest-status">
+          <legend>End (UTC)</legend>
+          <div class="utc-date-picker">
+            <input type="text" inputmode="numeric" maxlength="4" placeholder="YYYY" autocomplete="off" aria-label="End year (UTC)">
+            <select aria-label="End month (UTC)"></select>
+            <select aria-label="End day (UTC)"></select>
+          </div>
+        </fieldset>
         <label>Capital (USDT)<input name="capital" type="number" value="100000" min="1" max="1000000000" step="0.01" required></label>
         <label>Cash reserve (%)<input name="reserve_pct" type="number" value="20" min="0" max="100" step="0.01" required></label>
         <label>Entry fee (bps/leg)<input name="entry_bps" type="number" value="10" min="0" max="1000" step="0.01" required></label>
@@ -200,8 +213,32 @@
     <section aria-labelledby="data-log-title">
       <h2 id="data-log-title">Observation log</h2>
       <form id="diagnostic-filter" class="diagnostic-filter">
-        <label>From (UTC)<input name="start" type="text" placeholder="YYYY-MM-DD HH:MM:SS" autocomplete="off" spellcheck="false"></label>
-        <label>To (UTC)<input name="end" type="text" placeholder="YYYY-MM-DD HH:MM:SS" autocomplete="off" spellcheck="false"></label>
+        <fieldset class="diagnostic-bound" id="diagnostic-start">
+          <legend>From (UTC)</legend>
+          <div class="utc-date-picker">
+            <input type="text" inputmode="numeric" maxlength="4" placeholder="YYYY" autocomplete="off" aria-label="From year (UTC)">
+            <select aria-label="From month (UTC)"></select>
+            <select aria-label="From day (UTC)"></select>
+          </div>
+          <div class="diagnostic-time-picker">
+            <select aria-label="From hour (UTC)"></select>
+            <select aria-label="From minute (UTC)"></select>
+            <select aria-label="From second (UTC)"></select>
+          </div>
+        </fieldset>
+        <fieldset class="diagnostic-bound" id="diagnostic-end">
+          <legend>To (UTC)</legend>
+          <div class="utc-date-picker">
+            <input type="text" inputmode="numeric" maxlength="4" placeholder="YYYY" autocomplete="off" aria-label="To year (UTC)">
+            <select aria-label="To month (UTC)"></select>
+            <select aria-label="To day (UTC)"></select>
+          </div>
+          <div class="diagnostic-time-picker">
+            <select aria-label="To hour (UTC)"></select>
+            <select aria-label="To minute (UTC)"></select>
+            <select aria-label="To second (UTC)"></select>
+          </div>
+        </fieldset>
         <label>Request ID<input name="request_id" type="search" autocomplete="off"></label>
         <button type="submit">Search</button>
       </form>

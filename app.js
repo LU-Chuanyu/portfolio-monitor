@@ -2,7 +2,7 @@ import {api} from './api.js';
 import {drawChart} from './chart.js';
 import {
   FUNDING_WINDOW_MS, MINUTE_MS, displayedQuote, healthLabel, isQuote, isSamples,
-  latestRequest, nextMinuteReadAt, nextSettlement, querySignature, sameQuote,
+  isDay, latestRequest, nextMinuteReadAt, nextSettlement, observationBound, observationTime, querySignature, sameQuote,
 } from './view-model.js';
 
 const demo = document.body.dataset.demo === 'true';
@@ -698,6 +698,33 @@ async function loadFundingArchive() {
   }
 }
 
+function setUtcDatePicker(field, value = '') {
+  const [year, month, day] = field.querySelector('.utc-date-picker').children;
+  for (const [select, count, label] of [[month, 12, 'MM'], [day, 31, 'DD']]) {
+    if (!select.options.length) {
+      select.replaceChildren(new Option(label, ''), ...Array.from({length: count}, (_, index) => {
+        const digits = String(index + 1).padStart(2, '0');
+        return new Option(digits, digits);
+      }));
+    }
+  }
+  const [y = '', m = '', d = ''] = value.split('-');
+  year.value = y;
+  month.value = m;
+  day.value = d;
+}
+
+function readUtcDatePicker(field) {
+  const parts = Array.from(field.querySelector('.utc-date-picker').children, (control) => control.value.trim());
+  return parts.some(Boolean) ? parts.join('-') : '';
+}
+
+function backtestParams(form) {
+  const params = new URLSearchParams(new FormData(form));
+  for (const name of ['start', 'end']) params.set(name, readUtcDatePicker(el(`backtest-${name}`)));
+  return params;
+}
+
 let backtestBounds;
 let backtestBoundsPending = false;
 let displayedBacktestParams;
@@ -705,18 +732,12 @@ const latestBacktestRequest = latestRequest();
 async function prepareBacktest() {
   if (backtestBoundsPending || (backtestBounds && backtestBounds.end === report?.window.end_date)) return;
   backtestBoundsPending = true;
-  const form = el('backtest-form');
   try {
     const bounds = await api.backtestBounds();
-    const dayMs = 24 * 60 * minute;
-    const first = Date.parse(`${bounds.start}T00:00:00Z`);
-    const last = Date.parse(`${bounds.end}T00:00:00Z`);
-    const dates = [];
-    for (let t = last; t >= first; t -= dayMs) dates.push(new Date(t).toISOString().slice(0, 10));
-    el('backtest-date-options').replaceChildren(...dates.map(date => new Option(date, date)));
     if (!backtestBounds) {
-      form.elements.start.value = dates[29] ?? bounds.start;
-      form.elements.end.value = bounds.end;
+      const recentStart = new Date(Date.parse(`${bounds.end}T00:00:00Z`) - 29 * 86_400_000).toISOString().slice(0, 10);
+      setUtcDatePicker(el('backtest-start'), recentStart < bounds.start ? bounds.start : recentStart);
+      setUtcDatePicker(el('backtest-end'), bounds.end);
       el('run-backtest').disabled = false;
     }
     backtestBounds = bounds;
@@ -732,8 +753,7 @@ function validateBacktestDates(params, bounds) {
   for (const [name, label] of [['start', 'Start'], ['end', 'End']]) {
     const value = params.get(name).trim();
     params.set(name, value);
-    const date = new Date(`${value}T00:00:00Z`);
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || !Number.isFinite(date.valueOf()) || date.toISOString().slice(0, 10) !== value) {
+    if (!isDay(value)) {
       return [name, `${label} must be a valid UTC date in YYYY-MM-DD format.`];
     }
     if (value < bounds.start || value > bounds.end) {
@@ -802,12 +822,13 @@ async function runBacktest(form) {
   if (!backtestBounds) return;
   const run = el('run-backtest');
   const message = el('backtest-status');
-  const params = new URLSearchParams(new FormData(form));
+  const params = backtestParams(form);
   const invalidDate = validateBacktestDates(params, backtestBounds);
   if (invalidDate) {
     const [name, error] = invalidDate;
-    form.elements[name].setAttribute('aria-invalid', 'true');
-    form.elements[name].focus();
+    const picker = el(`backtest-${name}`);
+    picker.setAttribute('aria-invalid', 'true');
+    picker.querySelector('input').focus();
     message.dataset.error = 'true';
     message.textContent = `${error}${displayedBacktestNote()}`;
     return;
@@ -817,7 +838,7 @@ async function runBacktest(form) {
   run.disabled = true;
   message.dataset.error = 'false';
   message.textContent = `Calculating at ${params.get('slippage_bps')} bps…${displayedBacktestNote()}`;
-  const inputsChanged = () => submitted !== querySignature(new FormData(form));
+  const inputsChanged = () => submitted !== querySignature(backtestParams(form));
   const rerunMessage = `Inputs changed. Run backtest to apply.${displayedBacktestNote()}`;
   try {
     const result = await api.backtest(params);
@@ -1029,11 +1050,55 @@ function showObservation(index) {
   const {sources: capturedSources, ...valuation} = snapshot;
   text('diagnostic-detail', JSON.stringify({observation, sources, inputs, valuation}, null, 2));
 }
+function initObservationPicker(field, value, end) {
+  const times = [...field.querySelectorAll('.diagnostic-time-picker select')];
+  const parts = observationTime(value, end);
+  setUtcDatePicker(field, parts?.[0]);
+  const defaults = end ? ['23', '59', '59'] : ['00', '00', '00'];
+  times.forEach((select, index) => {
+    select.replaceChildren(...Array.from({length: index === 0 ? 24 : 60}, (_, number) => {
+      const digits = String(number).padStart(2, '0');
+      return new Option(digits, digits);
+    }));
+    select.value = parts?.[index + 1] ?? defaults[index];
+  });
+  const syncDisabled = () => times.forEach((select) => { select.disabled = !isDay(readUtcDatePicker(field)); });
+  syncDisabled();
+  if (value) field.dataset.original = value;
+  field.addEventListener('input', () => {
+    delete field.dataset.original;
+    syncDisabled();
+  });
+}
+
+function readObservationPicker(field, end) {
+  const date = readUtcDatePicker(field);
+  const times = Array.from(field.querySelectorAll('.diagnostic-time-picker select'), (select) => select.value);
+  return field.dataset.original ?? observationBound([date, ...times], end);
+}
+
 const latestDiagnosticsRequest = latestRequest();
 async function loadDiagnostics() {
   const isCurrent = latestDiagnosticsRequest();
   const filters = new URLSearchParams({limit:'25'});
-  for (const [key, value] of new FormData(el('diagnostic-filter'))) if (value.trim()) filters.set(key, value.trim());
+  const start = readObservationPicker(el('diagnostic-start'), false);
+  const end = readObservationPicker(el('diagnostic-end'), true);
+  const startTime = observationTime(start);
+  const endTime = observationTime(end, true);
+  const requestId = el('diagnostic-filter').elements.request_id.value.trim();
+  const invalid = start && !startTime ? 'From must be a valid UTC date.'
+    : end && !endTime ? 'To must be a valid UTC date.'
+    : start && end && Date.parse(observationBound(startTime)) > Date.parse(observationBound(endTime, true))
+      ? 'From must be on or before To.' : '';
+  if (invalid) {
+    observations.length = 0;
+    markup('diagnostic-log', '');
+    showObservation(-1);
+    el('diagnostic-clear').hidden = false;
+    text('diagnostic-message', invalid);
+    return;
+  }
+  for (const [key, value] of Object.entries({start, end, request_id: requestId})) if (value) filters.set(key, value);
   const params = new URLSearchParams(filters);
   params.delete('limit');
   history.replaceState(null, '', params.size ? `/data?${params}` : '/data');
@@ -1045,7 +1110,10 @@ async function loadDiagnostics() {
     observations.splice(0, observations.length, ...result.observations);
     markup('diagnostic-log', observations.map((row,index)=>`<button type="button" data-index="${index}" aria-pressed="false"><strong>${clock(row.observed_at)}</strong><span>${escape(row.alert_event?.type ?? row.classification)}</span><code title="${escape(row.request_id)}">${escape(row.request_id.slice(0,8))}</code></button>`).join(''));
     showObservation(observations.length ? 0 : -1);
-    text('diagnostic-message', observations.length ? `${observations.length} latest matches · Select a row to inspect inputs and valuation` : 'No matching observations');
+    const noMatches = result.coverage?.outside
+      ? `Selected range is outside retained observations (${clock(result.coverage.start, true)} to ${clock(result.coverage.end, true)}).`
+      : 'No matching observations';
+    text('diagnostic-message', observations.length ? `${observations.length} latest matches · Select a row to inspect inputs and valuation` : noMatches);
   } catch (error) {
     if (!isCurrent()) return;
     observations.length = 0;
@@ -1102,7 +1170,10 @@ if (view==='data') {
   el('refresh').hidden=true;
   el('update-mode').hidden=true;
   const filter = el('diagnostic-filter');
-  for (const [key, value] of new URLSearchParams(location.search)) if (filter.elements.namedItem(key) && ['start','end','request_id'].includes(key)) filter.elements.namedItem(key).value = value;
+  const params = new URLSearchParams(location.search);
+  initObservationPicker(el('diagnostic-start'), params.get('start'), false);
+  initObservationPicker(el('diagnostic-end'), params.get('end'), true);
+  filter.elements.request_id.value = params.get('request_id') ?? '';
   filter.addEventListener('submit', event => { event.preventDefault(); loadDiagnostics(); loadHealth(); });
   el('diagnostic-log').addEventListener('click', event => {
     const index = event.target.closest('button')?.dataset.index;
@@ -1130,13 +1201,13 @@ if (view==='data') {
   });
   backtestForm.addEventListener('input',event=>{
     if (event.target.name === 'slippage_bps') return;
-    if (['start', 'end'].includes(event.target.name)) {
-      for (const name of ['start', 'end']) event.currentTarget.elements[name].removeAttribute('aria-invalid');
+    if (event.target.closest('.backtest-date')) {
+      for (const name of ['start', 'end']) el(`backtest-${name}`).removeAttribute('aria-invalid');
     }
     if (displayedBacktestParams) reportBacktestChanges();
   });
   el('backtest-slippage').addEventListener('change',()=>{
-    if (sameBacktestInputs(new FormData(backtestForm))) runBacktest(backtestForm);
+    if (sameBacktestInputs(backtestParams(backtestForm))) runBacktest(backtestForm);
     else if (displayedBacktestParams) reportBacktestChanges();
   });
   el('history-day').addEventListener('change',event=>{ if (selectedRows.length) selectHistory(Number(event.target.value)); });

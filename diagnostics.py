@@ -207,5 +207,13 @@ class Diagnostics:
         query += ' ORDER BY observed_ms DESC, sequence DESC LIMIT ?'
         parameters = [value for _, value in conditions if value is not None]
         with closing(sqlite3.connect(self.path)) as conn:
+            conn.execute('BEGIN')
             rows = conn.execute(query, (*parameters, limit)).fetchall()
-        return {'observations': [json.loads(row[0]) for row in rows], 'limit': limit}
+            first = conn.execute('SELECT MIN(observed_ms) FROM observations').fetchone()[0]
+            last = conn.execute('SELECT MAX(observed_ms) FROM observations').fetchone()[0]
+        coverage = None if first is None else {
+            'start': utc_iso(first),
+            'end': utc_iso(last),
+            'outside': (lower is not None and lower > last) or (upper is not None and upper < first),
+        }
+        return {'observations': [json.loads(row[0]) for row in rows], 'limit': limit, 'coverage': coverage}

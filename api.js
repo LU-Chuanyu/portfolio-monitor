@@ -79,8 +79,11 @@ function isBacktest(data) {
 }
 
 function isDiagnostics(data) {
+  const coverage = data.coverage;
   return Array.isArray(data.observations) && data.observations.every((row) => isRecord(row)
-    && isString(row.request_id) && isTimestamp(row.observed_at) && isRecord(row.snapshot));
+    && isString(row.request_id) && isTimestamp(row.observed_at) && isRecord(row.snapshot))
+    && (coverage == null || (isRecord(coverage) && isTimestamp(coverage.start)
+      && isTimestamp(coverage.end) && typeof coverage.outside === 'boolean'));
 }
 
 export const api = {
